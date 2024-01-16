@@ -10,3 +10,6 @@ class KF:
         pass
     def update(self, x:float, y:float, z:float, roll:float, pitch:float, yaw:float) -> None:
         pass
+
+    def func():
+        print(1)
