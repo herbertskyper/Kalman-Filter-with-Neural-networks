@@ -6,6 +6,7 @@
 使用：
 kf = KF()
 kf.update(x,y,z,r,p,y)
+...
 '''
 
 import numpy.matlib
