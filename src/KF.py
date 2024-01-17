@@ -34,7 +34,7 @@ class KF(object):
         self.n = 9 # 状态量维数
         self.m = 3 # 观测量维数
 
-        self.Xe:np.matrix = np.matrix([0,0,0,0,0,0,0,0,0], dtype=float).transpose() # 状态量
+        self.Xe:np.matrix = np.matrix([1,2,1,0,0,1,0,0,1], dtype=float).transpose() # 状态量
         self.Pe:np.matrix = numpy.matlib.eye(self.n) # TODO 待定
         self.Pe:np.matrix = self.Pe * 0.01 # 先默认为0.01
         self.R:np.matrix = numpy.matlib.eye(self.m) # TODO 待定
@@ -54,13 +54,13 @@ class KF(object):
     def _calc(self, Z:np.matrix, dT:float):
         # TODO 没有测试，可能有 numpy.ndarray 和 numpy.matrix 两种类型转换和运算的问题
         # 或者改为全用 ndarray 会不会好一些？
-        F:np.matrix = np.matrix([[1,dT,0.5*dT**2,0,0,0,0,0,0,],
+        F:np.matrix = np.matrix([[1,dT,0,0,0,0,0,0,0,],
                                  [0,1,dT,0,0,0,0,0,0,],
                                  [0,0,1,0,0,0,0,0,0],
-                                 [0,0,0,1,dT,0.5*dT**2,0,0,0,],
+                                 [0,0,0,1,dT,0,0,0,0,],
                                  [0,0,0,0,1,dT,0,0,0,],
                                  [0,0,0,0,0,1,0,0,0,],
-                                 [0,0,0,0,0,0,1,dT,0.5*dT**2,],
+                                 [0,0,0,0,0,0,1,dT,0,],
                                  [0,0,0,0,0,0,0,1,dT,],
                                  [0,0,0,0,0,0,0,0,1,]])
         
@@ -73,7 +73,7 @@ class KF(object):
         # 最底层的是由于力的变化导致的加速度的变化，因此我们找到了加速度方差，就可以推导出Q矩阵，假设加速度方差是D(a)。
         # https://blog.csdn.net/u011362822/article/details/95905113
         # TODO 这里如果假设Q是由加速度对时间的导数引起的可以写出一个dT相关的矩阵，脑子傻了，之后写
-        Q:np.matrix = numpy.matlib.eye(self.n)
+        Q:np.matrix = numpy.matlib.eye(self.n)*0.0000
 
         X_pri = F @ self.Xe
         self.Pe = F @ self.Pe @ F.transpose() + Q
