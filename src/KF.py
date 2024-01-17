@@ -1,6 +1,8 @@
-'''卡尔曼滤波模块
+# -*- coding: utf-8 -*-
+'''
+卡尔曼滤波模块
 
-接收pnp.solve输出的x,y,z,r,p,y，
+接收pnp.solve输出的x,y,z,r,p,y,
 在内部更新坐标，供输出目标跟踪的结果
 
 使用：
@@ -34,17 +36,20 @@ class KF(object):
 
         self.Xe:np.matrix = np.matrix([0,0,0,0,0,0,0,0,0], dtype=float).transpose() # 状态量
         self.Pe:np.matrix = numpy.matlib.eye(self.n) # TODO 待定
+        self.Pe:np.matrix = self.Pe * 0.01 # 先默认为0.01
         self.R:np.matrix = numpy.matlib.eye(self.m) # TODO 待定
+        self.R:np.matrix = self.R * 0.01 # 先默认为0.01
 
         # self.Q:np.matrix = numpy.matlib.empty((self.n,self.n)) # 状态转移协方差矩阵，在update中根据每次观测的时间间隔t计算
         # Q矩阵也可在init中设置定值，根据效果调整
 
-        self.sigma2 = float(123456789) # TODO 待定
+        self.sigma2 = float(50) # TODO 待定
 
-    def update(self, x:float, y:float, z:float, roll:float, pitch:float, yaw:float, dT:float) -> None:
+    def update(self, x:float, y:float, z:float, roll:float, pitch:float, yaw:float, dT) -> None:
         # 外部调用卡尔曼滤波的接口，可以考虑删去，直接调用_calc 
         z = np.matrix([x,y,z])
-        self._calc(z, dT)
+        Z=self._calc(z, dT)
+        return Z
 
     def _calc(self, Z:np.matrix, dT:float):
         # TODO 没有测试，可能有 numpy.ndarray 和 numpy.matrix 两种类型转换和运算的问题
@@ -76,6 +81,7 @@ class KF(object):
         Zp = H @ X_pri
         self.Xe = X_pri + K @ (Z - Zp)
         self.Pe = (numpy.matlib.eye(self.n) - K @ H) @ self.Pe
+        return self.Xe
 
 if __name__ == '__main__':
     kf_instance = KF()
