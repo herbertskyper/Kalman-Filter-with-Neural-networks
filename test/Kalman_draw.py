@@ -15,9 +15,9 @@ def calc_stead_acceleration(x,vx,ax,y,vy,ay,z,vz,az,dt) -> list:
     # vz = vz + az*dt
     # az = az
     # return [x,vx,ax,y,vy,ay,z,vz,az]
-    return [x+vx*dt+0.5*ax*dt**2+np.random.normal(0,0.1), vx+ax*dt+np.random.normal(0,0.1), ax, 
-            y+vy*dt+0.5*ay*dt**2+np.random.normal(0,0.1), vy+ay*dt+np.random.normal(0,0.1), ay, 
-            z+vz*dt+0.5*az*dt**2+np.random.normal(0,0.1), vz+az*dt+np.random.normal(0,0.1), az]
+    return [x+vx*dt+0.5*ax*dt**2+np.random.normal(0,0.2), vx+ax*dt+np.random.normal(0,0.2), ax, 
+            y+vy*dt+0.5*ay*dt**2+np.random.normal(0,0.2), vy+ay*dt+np.random.normal(0,0.2), ay, 
+            z+vz*dt+0.5*az*dt**2+np.random.normal(0,0.2), vz+az*dt+np.random.normal(0,0.2), az]
 
 def draw_sport(data:np.ndarray) -> None:
     '''绘制运动轨迹'''
@@ -38,10 +38,11 @@ def draw_predict(data_origin:np.ndarray,data_predict:np.ndarray) -> None:
     ax.plot(data_predict[:,0],data_predict[:,1],data_predict[:,2],color='blue')
     plt.show() 
     
-    # 二维图
+    # 二维图，xOy平面
     plt.plot(data_origin[:,0], data_origin[:,3], color='red')
     plt.plot(data_predict[:,0], data_predict[:,1], color='blue')
-
+    plt.xlabel('x')
+    plt.ylabel('y',rotation=0)
     plt.show()
     
 
@@ -51,7 +52,7 @@ def generate_data():
     [ax,ay,az,dt] = [1,1,1,0.05]
     origin_data:np.ndarray = np.empty((100,9))
     predict_data:np.ndarray = np.empty((100,3))
-    origin_data[0]=[0,0,1,0,0,1,0,0,1]  #x,vx,ax,y,vy,ay,z,vz,az
+    origin_data[0]=[1,2,1,0,0,1,0,0,1]  #x,vx,ax,y,vy,ay,z,vz,az
     for i in range(1,100):
         origin_data[i]=calc_stead_acceleration(*origin_data[0],dt*i)
     #draw_sport(data)
