@@ -91,3 +91,6 @@ ENV/
 # CUSTOM:
 # KNN data files
 *.knn
+
+#TZH
+src/temp.py
