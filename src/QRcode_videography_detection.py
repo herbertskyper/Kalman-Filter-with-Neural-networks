@@ -5,6 +5,7 @@
 '''
 import cv2
 import numpy as np
+import copy
 # cap = cv2.VideoCapture(0)      
 class point:
     def __init__(self,x,y):
@@ -27,13 +28,17 @@ class QRcode:
         self.Point=points
         return data,qrcode_input
     
-    def get_corners(self):
+    def get_points(self):
         if self.Data:
             corners=[]
+            points=[]
             for ip in self.Point[0]:
                 corners.append(point(ip[0],ip[1]))
             #cv2.drawContours(qrcode_input, [np.int32(self.Point)], 0, (0, 0, 255), 2)
-            return corners
+            center_x,center_y=QRcode.calculate_center(corners)
+            points=copy.deepcopy(corners)
+            points.insert(0,point(center_x,center_y))
+            return points
     
     def release(self):
         self.camera.release()
@@ -41,3 +46,17 @@ class QRcode:
     def draw(self,img):
         cv2.drawContours(img, [np.int32(self.Point)], 0, (0, 0, 255), 2)
         return img
+    
+    @staticmethod
+    def calculate_center(corners):
+        x_coords = [corner.x for corner in corners]
+        y_coords = [corner.y for corner in corners]
+        center_x = sum(x_coords) / len(x_coords)
+        center_y = sum(y_coords) / len(y_coords)
+        return center_x, center_y
+    
+    @staticmethod
+    def show_originPoints(points):
+        print("originPoints:")
+        for i in range(5):
+            print("x{}:{:.2f},y{}:{:.2f}".format(i, points[i].x, i, points[i].y))
