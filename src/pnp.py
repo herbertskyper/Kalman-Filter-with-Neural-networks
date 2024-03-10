@@ -47,16 +47,12 @@ class Pnp:
 
     def __getTransformedPoints(self, rvec, tvec):
         #将旋转向量 rvec 转换为旋转矩阵 rotMat
-        rotMat = cv2.Rodrigues(rvec)[0]
+        rotMat = cv2.Rodrigues(rvec)[0] # rotMat: 3*3
+        # self.obj_points.T: 3*4(each column is a point vector)
         self.transformedPoints = rotMat @ self.obj_points.T + tvec
 
         self.__showTransformedPoints()
         return self.transformedPoints
-
-
-
-
-
 
 
         # cv2.solvePnP(self.obj_points,self.img_points,self.camera_matrix,self.dist_coeffs,self.rvec,self.tvec, ...)
