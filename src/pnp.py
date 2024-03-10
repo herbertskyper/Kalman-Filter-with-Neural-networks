@@ -37,6 +37,8 @@ class Pnp:
         if success == False:
             raise ValueError("solvePnP failed")
         self.__getTransformedPoints(rvec, tvec)
+        self.rvec = rvec
+        self.tvec = tvec
         return rvec, tvec
     
     def __showTransformedPoints(self):
@@ -49,7 +51,7 @@ class Pnp:
         #将旋转向量 rvec 转换为旋转矩阵 rotMat
         rotMat = cv2.Rodrigues(rvec)[0] # rotMat: 3*3
         # self.obj_points.T: 3*4(each column is a point vector)
-        self.transformedPoints = rotMat @ self.obj_points.T + tvec
+        self.transformedPoints:np.array = rotMat @ self.obj_points.T + tvec
 
         self.__showTransformedPoints()
         return self.transformedPoints

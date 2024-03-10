@@ -75,16 +75,16 @@ class KF(object):
         # TODO 这里如果假设Q是由加速度对时间的导数引起的可以写出一个dT相关的矩阵，脑子傻了，之后写
         Q:np.matrix = numpy.matlib.eye(self.n)*0.000 # TODO 待定
         
-        print(Q.shape)
+        #print(Q.shape)
         
         Q[0,1] = Q[1,0] = Q[2,1] = Q[1,2] = Q[4,3] = Q[3,4] = Q[5,4] = Q[4,5] = Q[7,6] = Q[6,7] = Q[8,7] = Q[7,8] = 0
         
         
-        print(Q)
+        #print(Q)
 
         X_pri = F @ self.Xe
         self.Pe = F @ self.Pe @ F.transpose() + Q
-        print(H @ self.Pe @ H.transpose() + self.R)
+        #print(H @ self.Pe @ H.transpose() + self.R)
         K = self.Pe @ H.transpose() @ numpy.linalg.inv(H @ self.Pe @ H.transpose() + self.R)
         Zp = H @ X_pri
         self.Xe = X_pri + K @ (Z - Zp)
