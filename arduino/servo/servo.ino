@@ -2,8 +2,8 @@
 
 constexpr int maxAngle = 150;
 constexpr int minAngle = 30;
-constexpr int pwm1 = 3;
-constexpr int pwm2 = 5;
+constexpr int pwmTop = 3;
+constexpr int pwmBottom = 5;
 constexpr int baudRate = 9600;
 
 
@@ -13,11 +13,11 @@ Servo servoTop;
 void setup()
 {
   Serial.begin(baudRate);
-  servoTop.attach(5, 500, 2500);
-  servoBottom.attach(3, 500, 2500);
+  servoTop.attach(pwmTop, 500, 2500);
+  servoBottom.attach(pwmBottom, 500, 2500);
 }
 
-void check(int &angle)
+void regulate(int &angle)
 {
   if(angle<0) angle=0;
   else if(angle>180) angle=180;
@@ -34,7 +34,7 @@ void loop()
       int digit = Serial.read();
       angle1 += (digit-'0')*pow(10, i);
     }
-    Serial.print("angle1:");
+    Serial.print("Top:");
     Serial.print(angle1);
 
     int angle2 = 0;
@@ -43,14 +43,14 @@ void loop()
       int digit = Serial.read();
       angle2 += (digit-'0')*pow(10, i);
     }
-    Serial.print("angle2:");
+    Serial.print("Bottom:");
     Serial.println(angle2);
 
-    check(angle1);
-    check(angle2);
+    regulate(angle1);
+    regulate(angle2);
 
     servoTop.write(angle1);
     servoBottom.write(angle2);
-    delay(50);
+    delay(30);
   }
 }
