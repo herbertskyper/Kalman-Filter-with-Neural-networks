@@ -15,17 +15,28 @@ def mytime(func):
         return result
     return wrapper
 
-def face_location(frame: np.array, frame_center: Tuple[int, int]) -> Tuple[int, int, Any]:
+def face_location_visual(frame: np.array, frame_center: Tuple[int, int]) -> Tuple[int, int, Any]:
     # return the location of the first face found
     # if not detected, return the center of the frame
     face_locations: list[Tuple[int, Any, Any, int]] = face_recognition.face_locations(frame)
-    face_landmarks_list:list[dict[str, list[tuple]]] = face_recognition.face_landmarks(frame)
+    face_landmarks_list:list[dict[str, list[tuple]]] = face_recognition.face_landmarks(frame) # TODO: whether or not delete this line
     if len(face_locations) > 0:
         y0, x0, y1, x1 = face_locations[0]
         face_x = int((x0 + x1) / 2)
         face_y = int((y0 + y1) / 2)
         return face_x, face_y, face_landmarks_list
-    return (frame_center[0], frame_center[1], face_landmarks_list)
+    return (-1, -1, face_landmarks_list)
+
+def face_location(frame: np.array, frame_center: Tuple[int, int]) -> Tuple[int, int, Any]:
+    # return the location of the first face found
+    # if not detected, return the center of the frame
+    face_locations: list[Tuple[int, Any, Any, int]] = face_recognition.face_locations(frame)
+    if len(face_locations) > 0:
+        y0, x0, y1, x1 = face_locations[0]
+        face_x = int((x0 + x1) / 2)
+        face_y = int((y0 + y1) / 2)
+        return face_x, face_y
+    return (-1, -1)
 
 class PID:
     def __init__(self, kP=1, kI=0, kD=0):
@@ -80,9 +91,9 @@ class PID:
 def list_ports():
     ports_list = list(serial.tools.list_ports.comports())
     if len(ports_list) <= 0:
-        print("无串口设备。")
+        print("[INFO] 无串口设备。")
     else:
-        print("可用的串口设备如下：")
+        print("[INFO] 可用的串口设备如下：")
         for comport in ports_list:
             print(list(comport)[0], list(comport)[1])
 
@@ -112,7 +123,7 @@ class Head:
 #             print(HEAD.obj_x, HEAD.obj_y)
 #             process_this_frame = 0
 #         process_this_frame += 1
-def draw(frame, face_landmarks_list) -> None:
+def draw(frame:np.array, face_landmarks_list) -> None:
     for face_landmarks in face_landmarks_list:
     # Loop over each facial feature (eye, nose, mouth, etc)
         for _, list_of_points in face_landmarks.items():
@@ -122,8 +133,8 @@ def draw(frame, face_landmarks_list) -> None:
     cv2.imshow("Face Detection", frame)
 
 def pid_init() -> Tuple[PID, PID]:
-    pan:PID = PID(0.08, 0, 0)
-    tilt:PID = PID(0.08, 0, 0)
+    pan:PID = PID(0.06, 0, 0) # TODO: change these values
+    tilt:PID = PID(-0.06, 0, 0)
     pan.initialize()
     tilt.initialize()
     return pan, tilt
@@ -132,14 +143,19 @@ def pid_update(frame: np.array, pan:PID, tilt:PID) -> Tuple[int, int]:
     head:Head = Head()
     head.center_x = frame.shape[1] // 2
     head.center_y = frame.shape[0] // 2
-    head.obj_x, head.obj_y, face_landmarks_list = face_location(frame, (head.center_x, head.center_y))
+    # head.obj_x, head.obj_y, face_landmarks_list = face_location(frame, (head.center_x, head.center_y))
+    head.obj_x, head.obj_y = face_location(frame, (head.center_x, head.center_y))
 
-    draw(frame, face_landmarks_list)
+    if head.obj_x == -1 and head.obj_y == -1:
+        error_x = 0
+        error_y = 0
+
+    # draw(frame, face_landmarks_list)+
     
     error_x = head.center_x - head.obj_x
     error_y = head.center_y - head.obj_y
 
-    BLOCK_SIZE = 20
+    BLOCK_SIZE = 0 # TODO: change this value
     if abs(error_x) < BLOCK_SIZE and abs(error_y) < BLOCK_SIZE:
         delta_x = 0
         delta_y = 0
@@ -147,20 +163,31 @@ def pid_update(frame: np.array, pan:PID, tilt:PID) -> Tuple[int, int]:
         delta_x = pan.update(error_x)
         delta_y = tilt.update(error_y)
 
-    pan_angle = delta_x + 90
-    tilt_angle = delta_y + 90
-    print('[pan_angle, tlt_angle] = ', pan_angle, tilt_angle)
+    # pan_angle = delta_x + 90
+    # tilt_angle = delta_y + 90
+    # print('[pan_angle, tlt_angle] = ', pan_angle, tilt_angle)
     
     return delta_x, delta_y
+
+def int_to_str(num:int) -> str:
+    num_str = str(num)
+
+    return '0' * (3 - len(num_str)) + num_str
+
 
 def set_servos(ser:serial.Serial, delta_x:int, delta_y:int) -> None:
     pan_angle = delta_x + 90
     tilt_angle = delta_y + 90
     print('[pan_angle, tlt_angle] = ', pan_angle, tilt_angle)
-    ser.write(str(pan_angle).encode('ascii'))
-    ser.write(str(tilt_angle).encode('ascii')) # FIXME: check if this is the correct way to send data to the arduino
+
+    pan_str = int_to_str(pan_angle)
+    tilt_str = int_to_str(tilt_angle)
+    
+    ser.write(pan_str.encode('ascii'))
+    ser.write(tilt_str.encode('ascii')) # FIXME: check if this is the correct way to send data to the arduino
   
 def main(path: str = ''):
+    list_ports()
     cap:cv2.VideoCapture = cv2.VideoCapture(0)
     ser = serial.Serial(path, 9600, timeout=0.5)
     pan, tilt = pid_init()
@@ -171,7 +198,6 @@ def main(path: str = ''):
         if not ret:
             raise Exception("Error: Couldn't read frame.")
         
-
         # cv2.imshow('Before pid_update', frame)
         delta_x, delta_y = pid_update(frame, pan, tilt)
         set_servos(ser, delta_x, delta_y)
@@ -185,5 +211,6 @@ def main(path: str = ''):
     ser.close()
     cap.release()
     cv2.destroyAllWindows()
+
 
 main("/dev/ttyUSB0")
