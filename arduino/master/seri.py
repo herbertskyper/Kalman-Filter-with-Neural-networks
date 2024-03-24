@@ -1,4 +1,5 @@
 from typing import Any,Tuple
+from altair import Theta2Datum
 import face_recognition
 import cv2
 import serial
@@ -24,7 +25,7 @@ def face_location_visual(frame: np.array, frame_center: Tuple[int, int]) -> Tupl
         face_y = int((y0 + y1) / 2)
         return face_x, face_y, face_landmarks_list
     return (-1, -1, face_landmarks_list)
-
+# @mytime
 def face_location(frame: np.array, frame_center: Tuple[int, int]) -> Tuple[int, int, Any]:
     face_locations: list[Tuple[int, Any, Any, int]] = face_recognition.face_locations(frame)
     if len(face_locations) > 0:
@@ -40,6 +41,7 @@ class PID:
         self.kP = kP
         self.kI = kI
         self.kD = kD
+        self.angle:float = 90
 
     def initialize(self):
         # intialize the current and previous time
@@ -54,9 +56,9 @@ class PID:
         self.cI = 0
         self.cD = 0
 
-    def update(self, error:float, sleep:float=0.2) -> int:
+    def update(self, error:float) -> int:
         # pause for a bit
-        time.sleep(sleep)
+        # time.sleep(sleep)
 
         # grab the current time and calculate delta time
         self.currTime = time.time()
@@ -78,11 +80,14 @@ class PID:
         self.prevTime = self.currTime
         self.prevError = error
 
-        # sum the terms and return
-        return int(sum([
+        self.angle = sum([
             self.kP * self.cP,
             self.kI * self.cI,
-            self.kD * self.cD]))
+            self.kD * self.cD,
+            self.angle])
+
+        # sum the terms and return
+        return int(self.angle)
     
 def list_ports():
     ports_list = list(serial.tools.list_ports.comports())
@@ -110,12 +115,12 @@ def draw(frame:np.array, face_landmarks_list) -> None:
     cv2.imshow("Face Detection", frame)
 
 def pid_init() -> Tuple[PID, PID]:
-    pan:PID = PID(0.06, 0, 0) # TODO: change these values
-    tilt:PID = PID(-0.06, 0, 0)
+    pan:PID = PID(0.02, 0, 0) # TODO: change these values
+    tilt:PID = PID(-0.02, 0, 0)
     pan.initialize()
     tilt.initialize()
     return pan, tilt
-
+# @mytime
 def pid_update(frame: np.array, pan:PID, tilt:PID) -> Tuple[int, int]:
     """detect face and update the pan and tilt angles
 
@@ -126,31 +131,34 @@ def pid_update(frame: np.array, pan:PID, tilt:PID) -> Tuple[int, int]:
 
     Returns:
         Tuple[int, int]: Delta angles for pan and tilt
-    """    
+    """
     head:Head = Head()
     head.center_x = frame.shape[1] // 2
     head.center_y = frame.shape[0] // 2
+
     # head.obj_x, head.obj_y, face_landmarks_list = face_location(frame, (head.center_x, head.center_y))
     head.obj_x, head.obj_y = face_location(frame, (head.center_x, head.center_y))
+    # print('[DEBUG] [head.obj_x, head.obj_y] = ', head.obj_x, head.obj_y, ' ', end="")
 
-    if head.obj_x == -1 and head.obj_y == -1:
-        error_x = 0
-        error_y = 0
-
-    # draw(frame, face_landmarks_list)
-    
     error_x = head.center_x - head.obj_x
     error_y = head.center_y - head.obj_y
+    if head.obj_x == -1 or head.obj_y == -1:
+        error_x = 0
+        error_y = 0
+    # draw(frame, face_landmarks_list)
 
-    BLOCK_SIZE = 0 # TODO: change this value
+    BLOCK_SIZE = 30 # TODO: change this value
     if abs(error_x) < BLOCK_SIZE and abs(error_y) < BLOCK_SIZE:
-        delta_x = 0
-        delta_y = 0
+        error_x = 0
+        error_y = 0
+    pan_angle = pan.update(error_x)
+    tilt_angle = tilt.update(error_y)
+
+    if head.obj_x == -1 or head.obj_y == -1:
+        print('[WARN] No face detected')
     else:
-        delta_pan = pan.update(error_x)
-        delta_tilt = tilt.update(error_y)
-    
-    return delta_pan, delta_tilt
+        print('[INFO] [pan, tilt] = ', pan_angle, tilt_angle)
+    return pan_angle, tilt_angle
 
 def int_to_str(num:int) -> str:
     num_str = str(num)
@@ -158,13 +166,13 @@ def int_to_str(num:int) -> str:
     return '0' * (3 - len(num_str)) + num_str
 
 
-def set_servos(ser:serial.Serial, delta_pan:int, delta_tilt:int) -> None:
-    pan_angle = delta_pan + 90
-    tilt_angle = delta_tilt + 90
-    print('[pan_angle, tlt_angle] = ', pan_angle, tilt_angle)
+def set_servos(ser:serial.Serial, pan:int, tilt:int) -> None:
+    # pan_angle = delta_pan + 90
+    # tilt_angle = delta_tilt + 90
+    # print('[pan_angle, tlt_angle] = ', pan_angle, tilt_angle)
 
-    pan_str = int_to_str(pan_angle)
-    tilt_str = int_to_str(tilt_angle)
+    pan_str = int_to_str(pan)
+    tilt_str = int_to_str(tilt)
     
     ser.write(tilt_str.encode('ascii')) # FIXME: check if the order is correct
     ser.write(pan_str.encode('ascii'))
@@ -177,13 +185,14 @@ def main(path: str = '', cam_id: int = 0):
 
     while True:
         # Capture frame-by-frame
+        # time.sleep(0.05)
         ret, frame = cap.read()
         if not ret:
             raise Exception("Error: Couldn't read frame.")
         
         # cv2.imshow('Before pid_update', frame)
-        delta_pan, delta_tilt = pid_update(frame, pan, tilt)
-        set_servos(ser, delta_pan, delta_tilt)
+        pan_angle, tilt_angle = pid_update(frame, pan, tilt)
+        set_servos(ser, pan_angle, tilt_angle)
 
         # cv2.imshow('After pid_update', frame)
 
@@ -195,4 +204,4 @@ def main(path: str = '', cam_id: int = 0):
     cap.release()
     cv2.destroyAllWindows()
 
-main("/dev/ttyUSB0", 0)
+main("/dev/ttyUSB0", 2)
