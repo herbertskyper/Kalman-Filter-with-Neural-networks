@@ -21,10 +21,10 @@ if __name__ == '__main__':
                         time_prev = time.time()
                         flag_first = False
                   points=detector.get_points()
-                  detector.show_originPoints(points)#´òÓ¡¶şÎ¬ÂëÖĞĞÄµãºÍËÄ¸ö½ÇµãÔÚ»­Ãæ×ø±êÏµÏÂµÄ×ø±ê(¶şÎ¬)
+                  detector.show_originPoints(points)#æ‰“å°äºŒç»´ç ä¸­å¿ƒç‚¹å’Œå››ä¸ªè§’ç‚¹åœ¨ç”»é¢åæ ‡ç³»ä¸‹çš„åæ ‡(äºŒç»´)
                   
                   imagePoints:np.array = Pnp.convertCornerToImagePoints(points)
-                  pnp.solve(imagePoints, pnp.obj_points)#´òÓ¡¶şÎ¬ÂëÖĞĞÄµãºÍËÄ¸ö½ÇµãÔÚÏà»ú×ø±êÏµÏÂµÄ×ø±ê(ÈıÎ¬)
+                  pnp.solve(imagePoints, pnp.obj_points)#æ‰“å°äºŒç»´ç ä¸­å¿ƒç‚¹å’Œå››ä¸ªè§’ç‚¹åœ¨ç›¸æœºåæ ‡ç³»ä¸‹çš„åæ ‡(ä¸‰ç»´)
                   
                   dT=time.time()-time_prev
                   time_prev = time.time()
@@ -36,7 +36,7 @@ if __name__ == '__main__':
                   
                   predict_points_3D = np.array(predict_points_3D).reshape(-1, 1, 3)
                   predict_points_2D, _ = cv2.projectPoints(predict_points_3D, pnp.rvec, pnp.tvec, pnp.camera_matrix, pnp.dist_coeffs)
-                  #predict_points_2DĞÎ×´Îª(1,1,2)
+                  #predict_points_2Då½¢çŠ¶ä¸º(1,1,2)
                   cv2.circle(inputresult,(int(predict_points_2D[0][0][0]),int(predict_points_2D[0][0][1])),5,(0,255,0),-1)
                   input_dealed=detector.draw(inputresult)
                   cv2.imshow("camera",input_dealed)
