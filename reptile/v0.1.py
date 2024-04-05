@@ -1,26 +1,46 @@
+#-*encoding:utf-8-*
 from selenium import webdriver
-from selenium.webdriver.edge.service import Service
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
-from selenium.webdriver.common.by import By
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from bs4 import BeautifulSoup
+import requests
+import os
 
-# ÉèÖÃwebdriverÂ·¾¶
-webdriver_service = Service(EdgeChromiumDriverManager().install())
+#find / -name "msedgedriver" 2>/dev/null  æŸ¥æ‰¾msedgedriverè·¯å¾„
+# è®¾ç½®webdriverè·¯å¾„
+driver_path = '/home/herbert/edgedriver/msedgedriver'
 
-# ´´½¨webdriver¶ÔÏó
-driver = webdriver.Edge(service=webdriver_service)
+# åˆ›å»ºwebdriverå¯¹è±¡
+driver = webdriver.Edge(executable_path=driver_path)
 
-# ·ÃÎÊÍøÒ³
+# è®¿é—®ç½‘é¡µ
 driver.get('https://image.baidu.com/search/index?tn=baiduimage&ps=1&ct=201326592&lm=-1&cl=2&nc=1&ie=utf-8&dyTabStr=MCwzLDEsMiw0LDYsNSw8LDcsOQ%3D%3D&word=%E4%BA%8C%E7%BB%B4%E7%A0%81')
 
-# Ö´ĞĞJavaScript´úÂë
+# æ‰§è¡ŒJavaScriptä»£ç 
 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
 
-# µÈ´ıÒ³Ãæ¼ÓÔØ
+# ç­‰å¾…é¡µé¢åŠ è½½
 driver.implicitly_wait(10)
 
-# »ñÈ¡Ò³ÃæÔ´´úÂë
+# è·å–é¡µé¢æºä»£ç 
 content = driver.page_source
 
-# ¹Ø±Õä¯ÀÀÆ÷
+# ä½¿ç”¨BeautifulSoupè§£æé¡µé¢æºä»£ç 
+soup = BeautifulSoup(content, 'html.parser')
+
+# æ‰¾åˆ°æ‰€æœ‰çš„äºŒç»´ç å›¾ç‰‡
+img_tags = soup.find_all('img')
+
+# åˆ›å»ºä¸€ä¸ªæ–‡ä»¶å¤¹æ¥ä¿å­˜äºŒç»´ç å›¾ç‰‡
+if not os.path.exists('qrcodes'):
+    os.makedirs('qrcodes')
+
+# ä¸‹è½½æ‰€æœ‰çš„äºŒç»´ç å›¾ç‰‡
+for i, img_tag in enumerate(img_tags):
+    img_url = img_tag.get('src')
+    response = requests.get(img_url)
+    with open('qrcodes/qrcode{}.jpg'.format(i), 'wb') as f:
+        f.write(response.content)
+
+# å…³é—­æµè§ˆå™¨
 driver.quit()
 
