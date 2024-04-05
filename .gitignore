@@ -94,3 +94,6 @@ ENV/
 
 #TZH
 src/temp.py
+
+#herbert
+qrcodes/
