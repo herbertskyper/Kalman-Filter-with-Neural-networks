@@ -1,0 +1,1 @@
+alias start='python yolov5/detect.py --source 0'
