@@ -1,0 +1,2 @@
+yolov5/weights/qrcode_best.pt filter=lfs diff=lfs merge=lfs -text
+yolov5/runs/detect/exp14/0.mp4 filter=lfs diff=lfs merge=lfs -text
