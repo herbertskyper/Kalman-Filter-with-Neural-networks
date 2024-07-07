@@ -97,3 +97,9 @@ src/temp.py
 
 #herbert
 qrcodes/
+
+
+datasets/
+
+yolov5/runs/
+yolov5/.cometml-runs/
