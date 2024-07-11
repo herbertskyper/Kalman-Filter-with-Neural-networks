@@ -1,5 +1,5 @@
 # -*- coding: gbk -*-
-from test import Kalman_draw as draw
+from . import Kalman_draw as draw
 import cv2
 import numpy as np
 import time

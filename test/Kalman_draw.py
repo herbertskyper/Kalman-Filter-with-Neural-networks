@@ -1,9 +1,13 @@
-# -*- coding: gbk -*-
-from src import KF as filter
+# -*- coding: utf-8 -*-
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))  #æ·»åŠ ç›¸å¯¹è·¯å¾„åˆ°ç³»ç»Ÿè·¯å¾„
+
+from src.KF import KF as filter
 import numpy as np
 
 def calc_stead_acceleration(x,vx,ax,y,vy,ay,z,vz,az,dt) -> list:
-    '''¼ÆËãÔÈ¼ÓËÙÔË¶¯µÄÎ»ÒÆ'''
+    '''è®¡ç®—åŒ€åŠ é€Ÿè¿åŠ¨çš„ä½ç§»'''
     # e=np.random.normal(0,0.1)
     # x = x + vx*dt + 0.5*ax*dt**2
     # vx = vx + ax*dt
@@ -20,13 +24,13 @@ def calc_stead_acceleration(x,vx,ax,y,vy,ay,z,vz,az,dt) -> list:
             z+vz*dt+0.5*az*dt**2+np.random.normal(0,0.2), vz+az*dt+np.random.normal(0,0.2), az]
     
 def calc_unstead_acceleration(x,vx,ax,y,vy,ay,z,vz,az,dt) -> list:
-    '''¼ÆËã±ä¼ÓËÙÔË¶¯µÄÎ»ÒÆ'''
+    '''è®¡ç®—å˜åŠ é€Ÿè¿åŠ¨çš„ä½ç§»'''
     return [x+vx*dt+0.5*(ax+dt)*dt**2+np.random.normal(0,0.2), vx+ax*dt+np.random.normal(0,0.2), ax+dt+np.random.normal(0,0.2), 
             y+vy*dt+0.5*(ay+dt)*dt**2+np.random.normal(0,0.2), vy+ay*dt+np.random.normal(0,0.2), ay+dt+np.random.normal(0,0.2), 
             z+vz*dt+0.5*az*dt**2+np.random.normal(0,0.2), vz+az*dt+np.random.normal(0,0.2), az]
 
 def draw_sport(data:np.ndarray) -> None:
-    '''»æÖÆÔË¶¯¹ì¼£'''
+    '''ç»˜åˆ¶è¿åŠ¨è½¨è¿¹'''
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
@@ -35,7 +39,7 @@ def draw_sport(data:np.ndarray) -> None:
     plt.show() 
     
 def draw_predict(data_origin:np.ndarray,data_predict:np.ndarray) -> None:
-    '''»æÖÆÔË¶¯ºÍÔ¤²â¹ì¼£'''
+    '''ç»˜åˆ¶è¿åŠ¨å’Œé¢„æµ‹è½¨è¿¹'''
     import matplotlib.pyplot as plt
     from mpl_toolkits.mplot3d import Axes3D
     fig = plt.figure()
@@ -47,7 +51,7 @@ def draw_predict(data_origin:np.ndarray,data_predict:np.ndarray) -> None:
     #plt.zlabel('z',rotation=0)
     plt.show() 
     
-    # ¶şÎ¬Í¼£¬xOyÆ½Ãæ
+    # äºŒç»´å›¾ï¼ŒxOyå¹³é¢
     plt.plot(data_origin[:,0], data_origin[:,6], color='red')
     plt.plot(data_predict[:,0], data_predict[:,2], color='blue')
     plt.xlabel('x')
@@ -56,8 +60,8 @@ def draw_predict(data_origin:np.ndarray,data_predict:np.ndarray) -> None:
     
 
 def generate_data():
-    '''Éú³É²âÊÔÊı¾İ'''
-    kf=filter.KF()
+    '''ç”Ÿæˆæµ‹è¯•æ•°æ®'''
+    kf=filter()
     [ax,ay,az,dt] = [1,1,1,0.05]
     origin_data:np.ndarray = np.empty((100,9))
     predict_data:np.ndarray = np.empty((100,3))
@@ -75,3 +79,6 @@ def generate_data():
     for i in range(100):
         predict_data[i]=kf.update(origin_data[i][0],origin_data[i][3],origin_data[i][6],0,0,0,dt).tolist()[0]
     draw_predict(origin_data,predict_data)
+    
+if __name__ == '__main__':
+    generate_data()
