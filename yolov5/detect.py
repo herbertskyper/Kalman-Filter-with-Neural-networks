@@ -37,6 +37,7 @@ from pathlib import Path
 
 import torch
 
+
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
@@ -97,6 +98,11 @@ def run(
     dnn=False,  # use OpenCV DNN for ONNX inference
     vid_stride=1,  # video frame-rate stride
 ):
+    import time
+    from src.yolo_result import YoloResult
+    time_start=time.time()
+    YoloResult=YoloResult()
+    
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
     is_file = Path(source).suffix[1:] in (IMG_FORMATS + VID_FORMATS)
@@ -219,6 +225,39 @@ def run(
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f"{names[c]} {conf:.2f}")
                         annotator.box_label(xyxy, label, color=colors(c, True))
+                        
+                        p1, p2 = (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3]))
+                        
+                        lw = max(round(sum(im0.shape) / 2 * 0.003), 2)
+                        # 在预测图中绘制一个中心坐标红点
+                        cv2.circle(im0,((p1[0] + p2[0])//2, (p1[1] + p2[1])//2), lw,(0, 0, 255), lw)
+                        # 创建了个中心点坐标变量
+                        Center = ( ((p2[0] - p1[0]) / 2 +p1[0]) , ((p2[1] - p1[1]) / 2 + p1[1]) )
+                        cv2.putText(im0, str(Center), ((p1[0] + p2[0])//2, (p1[1] + p2[1])//2), 0, lw / 3,(255, 255, 255),
+                                        thickness=4, lineType=cv2.LINE_AA)
+                        # 打印坐标信息
+                        print("左上点的坐标为：(" + str(p1[0]) + "," + str(p1[1]) + ")，右上点的坐标为(" + str(p2[0]) + "," + str(
+                            p1[1]) + ")")
+                        print("左下点的坐标为：(" + str(p1[0]) + "," + str(p2[1]) + ")，右下点的坐标为(" + str(p2[0]) + "," + str(
+                            p2[1]) + ")")
+                        
+                        print("中心点的坐标为：(" + str((p2[0] - p1[0]) / 2 +p1[0]) + "," + str((p2[1] - p1[1]) / 2 + p1[1]) + ")")
+                        print("记录时间：" + str(time.time()-time_start))
+                        
+                        # YoloResult.position4_data.append(((p1[0], p1[1]),(p2[0],p1[1]) ,(p1[0],p2[1]),(p2[0],p2[1]),time.time()-time_start))
+                        YoloResult.central_position_data.append(((p2[0] - p1[0]) / 2 +p1[0],(p2[1] - p1[1]) / 2 + p1[1]),time.time()-time_start)
+                        
+                        
+                        with open("coordinates.txt", "a") as f:
+                            f.write("左上点的坐标为：(" + str(p1[0]) + "," + str(p1[1]) + ")，右上点的坐标为(" + str(p2[0]) + "," + str(p1[1]) + ")\n")
+                            f.write("左下点的坐标为：(" + str(p1[0]) + "," + str(p2[1]) + ")，右下点的坐标为(" + str(p2[0]) + "," + str(p2[1]) + ")\n")
+                            f.write("中心点的坐标为：(" + str((p2[0] - p1[0]) / 2 +p1[0]) + "," + str((p2[1] - p1[1]) / 2 + p1[1]) + ")\n")
+                            f.write("记录时间：" + str(time.time()-time_start) + "\n")
+                            f.write("\n")
+                        
+                        # print("111111111111111111111111111111111111111111")
+                        
+                        
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True)
 

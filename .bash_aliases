@@ -1,1 +1,3 @@
-alias start='python yolov5/detect.py --source 0'
+# alias start='python -m yolov5.detect --source 0 --save-txt --save-conf --nosave'
+alias start='python -m main --source 0 --save-txt --save-conf --nosave'
+alias train='python yolov5/train.py --noval'
