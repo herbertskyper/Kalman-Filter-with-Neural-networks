@@ -1,0 +1,9 @@
+
+train: ../../datasets/qrcode/full/images/train # 16551 images
+val: ../../datasets/qrcode/full/images/val  # 4952 images
+
+# number of classes
+nc: 1
+
+# class names
+names: ['QR']
