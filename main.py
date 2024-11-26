@@ -14,7 +14,7 @@ if __name__ == '__main__':
       filter=KF()
       pnp = Pnp(0.02, *load_config("tzh_cam.yaml")) # TODO
       flag_first = True
-      if_yolo=True
+      if_yolo=False
       
       if if_yolo:
             opt = parse_opt()

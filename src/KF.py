@@ -35,10 +35,10 @@ class KF(object):
         self.m = 3 # 观测量维数
 
         self.Xe:np.matrix = np.matrix([1,2,1,0,0,1,0,0,1], dtype=float).transpose() # 状态量
-        self.Pe:np.matrix = numpy.matlib.eye(self.n) # TODO 待定
+        self.Pe:np.matrix = numpy.matlib.eye(self.n) # TODO 待定 状态协方差矩阵
         self.Pe:np.matrix = self.Pe * 0.01 # 先默认为0.01
         self.R:np.matrix = numpy.matlib.eye(self.m) # TODO 待定
-        self.R:np.matrix = self.R * 0.01 # 先默认为0.01
+        self.R:np.matrix = self.R * 0.01 # 先默认为0.01 测量噪声协方差矩阵
 
         # self.Q:np.matrix = numpy.matlib.empty((self.n,self.n)) # 状态转移协方差矩阵，在update中根据每次观测的时间间隔t计算
         # Q矩阵也可在init中设置定值，根据效果调整
@@ -55,18 +55,18 @@ class KF(object):
         # TODO 没有测试，可能有 numpy.ndarray 和 numpy.matrix 两种类型转换和运算的问题
         # 或者改为全用 ndarray 会不会好一些？
         F:np.matrix = np.matrix([[1,dT,0,0,0,0,0,0,0,],
-                                 [0,1,dT,0,0,0,0,0,0,],
-                                 [0,0,1,0,0,0,0,0,0],
-                                 [0,0,0,1,dT,0,0,0,0,],
-                                 [0,0,0,0,1,dT,0,0,0,],
-                                 [0,0,0,0,0,1,0,0,0,],
-                                 [0,0,0,0,0,0,1,dT,0,],
-                                 [0,0,0,0,0,0,0,1,dT,],
-                                 [0,0,0,0,0,0,0,0,1,]])
+                                [0,1,dT,0,0,0,0,0,0,],
+                                [0,0,1,0,0,0,0,0,0],
+                                [0,0,0,1,dT,0,0,0,0,],
+                                [0,0,0,0,1,dT,0,0,0,],
+                                [0,0,0,0,0,1,0,0,0,],
+                                [0,0,0,0,0,0,1,dT,0,],
+                                [0,0,0,0,0,0,0,1,dT,],
+                                [0,0,0,0,0,0,0,0,1,]])
         
         H:np.matrix = np.matrix([[1,0,0,0,0,0,0,0,0,],
-                                 [0,0,0,1,0,0,0,0,0,],
-                                 [0,0,0,0,0,0,1,0,0,]])
+                                [0,0,0,1,0,0,0,0,0,],
+                                [0,0,0,0,0,0,1,0,0,]])
         
         # 引用下面链接：Q矩阵是由不确定的噪声引起的，确定Q的各元素大小是不容易的.
         # 使用时都是具体问题具体分析，比方说针对只有x，y，z，Vx，Vy，Vz的状态，误差来源是移动中的打滑等
@@ -82,7 +82,7 @@ class KF(object):
         
         #print(Q)
 
-        X_pri = F @ self.Xe
+        X_pri = F @ self.Xe  # X(t|t-1) 先验估计
         self.Pe = F @ self.Pe @ F.transpose() + Q
         #print(H @ self.Pe @ H.transpose() + self.R)
         K = self.Pe @ H.transpose() @ numpy.linalg.inv(H @ self.Pe @ H.transpose() + self.R)
