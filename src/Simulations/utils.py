@@ -54,6 +54,7 @@ def DataGen(args, SysModel_data, fileName):
     if args.randomLength:
         test_lengthMask = SysModel_data.lengthMask
 
+    print("train_input:",train_input.shape)
     #################
     ### Save Data ###
     #################

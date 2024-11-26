@@ -59,4 +59,4 @@ class QRcode:
     def show_originPoints(points):
         print("originPoints:")
         for i in range(5):
-            print("x{}:{:.2f},y{}:{:.2f}".format(i, points[i].x, i, points[i].y))
+            print("x{}:{:.4f},y{}:{:.4f}".format(i, points[i].x, i, points[i].y))

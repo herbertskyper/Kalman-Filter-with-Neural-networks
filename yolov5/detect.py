@@ -37,6 +37,17 @@ from pathlib import Path
 
 import torch
 
+from test import Kalman_draw as draw
+import cv2
+import numpy as np
+import time
+from src.QRcode_videography_detection import QRcode
+from src.pnp import Pnp
+from src.KF import KF
+from src.yaml_loader import load_config
+from yolov5.detect import *
+from src.linear_canonical_test import *
+
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -102,6 +113,7 @@ def run(
     from src.yolo_result import YoloResult
     time_start=time.time()
     YoloResult=YoloResult()
+    filter_KNet=linear_canonical_test()
     
     source = str(source)
     save_img = not nosave and not source.endswith(".txt")  # save inference images
@@ -230,10 +242,10 @@ def run(
                         
                         lw = max(round(sum(im0.shape) / 2 * 0.003), 2)
                         # 在预测图中绘制一个中心坐标红点
-                        cv2.circle(im0,((p1[0] + p2[0])//2, (p1[1] + p2[1])//2), lw,(0, 0, 255), lw)
+                        cv2.circle(im0,((p1[0] + p2[0])//2, (p1[1] + p2[1])//2), lw,(255, 0, 0), lw)
                         # 创建了个中心点坐标变量
                         Center = ( ((p2[0] - p1[0]) / 2 +p1[0]) , ((p2[1] - p1[1]) / 2 + p1[1]) )
-                        cv2.putText(im0, str(Center), ((p1[0] + p2[0])//2, (p1[1] + p2[1])//2), 0, lw / 3,(255, 255, 255),
+                        cv2.putText(im0, str(Center), ((p1[0] + p2[0])//2, (p1[1] + p2[1])//2), 0, lw / 3,(255, 0, 0),
                                         thickness=4, lineType=cv2.LINE_AA)
                         # 打印坐标信息
                         print("左上点的坐标为：(" + str(p1[0]) + "," + str(p1[1]) + ")，右上点的坐标为(" + str(p2[0]) + "," + str(
@@ -245,15 +257,59 @@ def run(
                         print("记录时间：" + str(time.time()-time_start))
                         
                         # YoloResult.position4_data.append(((p1[0], p1[1]),(p2[0],p1[1]) ,(p1[0],p2[1]),(p2[0],p2[1]),time.time()-time_start))
-                        YoloResult.central_position_data.append(((p2[0] - p1[0]) / 2 +p1[0],(p2[1] - p1[1]) / 2 + p1[1]),time.time()-time_start)
+                        # YoloResult.central_position_data.append(((p2[0] - p1[0]) / 2 +p1[0],(p2[1] - p1[1]) / 2 + p1[1]),time.time()-time_start)
                         
                         
-                        with open("coordinates.txt", "a") as f:
-                            f.write("左上点的坐标为：(" + str(p1[0]) + "," + str(p1[1]) + ")，右上点的坐标为(" + str(p2[0]) + "," + str(p1[1]) + ")\n")
-                            f.write("左下点的坐标为：(" + str(p1[0]) + "," + str(p2[1]) + ")，右下点的坐标为(" + str(p2[0]) + "," + str(p2[1]) + ")\n")
-                            f.write("中心点的坐标为：(" + str((p2[0] - p1[0]) / 2 +p1[0]) + "," + str((p2[1] - p1[1]) / 2 + p1[1]) + ")\n")
-                            f.write("记录时间：" + str(time.time()-time_start) + "\n")
-                            f.write("\n")
+                        # with open("coordinates.txt", "a") as f:
+                        #     f.write("左上点的坐标为：(" + str(p1[0]) + "," + str(p1[1]) + ")，右上点的坐标为(" + str(p2[0]) + "," + str(p1[1]) + ")\n")
+                        #     f.write("左下点的坐标为：(" + str(p1[0]) + "," + str(p2[1]) + ")，右下点的坐标为(" + str(p2[0]) + "," + str(p2[1]) + ")\n")
+                        #     f.write("中心点的坐标为：(" + str((p2[0] - p1[0]) / 2 +p1[0]) + "," + str((p2[1] - p1[1]) / 2 + p1[1]) + ")\n")
+                        #     f.write("记录时间：" + str(time.time()-time_start) + "\n")
+                        #     f.write("\n")
+                            
+                        # with open("coordinates_x.txt", "a") as f:
+                        #     f.write(str((p2[0] - p1[0]) / 2 +p1[0]) + "," )
+                            
+                        # with open("coordinates_y.txt", "a") as f:
+                        #     f.write(str((p2[1] - p1[1]) / 2 + p1[1]) + "," )
+                        # detector = QRcode()
+                        # while True:
+                            # dataresult,inputresult=detector.detectcode()
+                            # if dataresult:
+                                    # if flag_first:
+                                    #     time_prev = time.time()
+                                    #     flag_first = False
+                                    # points=detector.get_points()
+                                    # detector.show_originPoints(points)#打印二维码中心点和四个角点在画面坐标系下的坐标(二维)
+                                    
+                                    # imagePoints:np.array = Pnp.convertCornerToImagePoints(points)
+                                    # print("imagePoints:",imagePoints)
+                                    # pnp.solve(imagePoints, pnp.obj_points)#打印二维码中心点和四个角点在相机坐标系下的坐标(三维)
+                                    
+                                    # dT=time.time()-time_prev
+                                    # time_prev = time.time()
+                                    #dT = 0.02
+                        # print("pnp.transformedPoints:",pnp.transformedPoints)
+                        predict_points_3D_1=filter_KNet.update(((p2[0] - p1[0]) / 2 +p1[0],(p2[1] - p1[1]) / 2 + p1[1]))
+                        # predict_points_3D = [predict_points_3D_1[0].item(),predict_points_3D_1[1].item(),pnp.transformedPoints[2][0]]
+                        # print("predict:")
+                        # print(predict_points_3D)
+                        cv2.circle(im0,(int(predict_points_3D_1[0].item()), int(predict_points_3D_1[1].item()+200)), lw,(0, 255, 0), lw)
+                        cv2.putText(im0, "next_time", (int(predict_points_3D_1[0].item()), int(predict_points_3D_1[1].item())+200), 0, lw / 3,(0, 0, 255),
+                                        thickness=4, lineType=cv2.LINE_AA)
+                        # cv2.circle(inputresult,(int(imagePoints[0][0]),int(imagePoints[0][1])),5,(0,0,255),-1)
+                        
+                #         predict_points_3D = np.array(predict_points_3D).reshape(-1, 1, 3)
+                #         predict_points_2D, _ = cv2.projectPoints(predict_points_3D, pnp.rvec, pnp.tvec, pnp.camera_matrix, pnp.dist_coeffs)
+                #         #predict_points_2D形状为(1,1,2)
+                #         cv2.circle(inputresult,(int(predict_points_2D[0][0][0]),int(predict_points_2D[0][0][1])),5,(0,255,0),-1)
+                #         input_dealed=detector.draw(inputresult)
+                #         cv2.imshow("camera",input_dealed)
+                # else:
+                #         cv2.imshow("camera",inputresult)
+
+                            
+                        
                         
                         # print("111111111111111111111111111111111111111111")
                         
@@ -286,8 +342,8 @@ def run(
                             h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
                         else:  # stream
                             fps, w, h = 30, im0.shape[1], im0.shape[0]
-                        save_path = str(Path(save_path).with_suffix(".mp4"))  # force *.mp4 suffix on results videos
-                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (w, h))
+                        save_path = str(Path(save_path).with_suffix(".avi"))  # force *.mp4 suffix on results videos
+                        vid_writer[i] = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*"XVID"), fps, (w, h))
                     vid_writer[i].write(im0)
 
         # Print time (inference-only)
@@ -307,7 +363,7 @@ def parse_opt():
     """Parses command-line arguments for YOLOv5 detection, setting inference options and model configurations."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--weights", nargs="+", type=str, default=ROOT / "weights/qrcode_best.pt", help="model path or triton URL")
-    parser.add_argument("--source", type=str, default=ROOT / "data/images", help="file/dir/URL/glob/screen/0(webcam)")
+    parser.add_argument("--source", type=str, default="0", help="file/dir/URL/glob/screen/0(webcam)")   #default=ROOT / "data/images"
     parser.add_argument("--data", type=str, default=ROOT / "data/qrcode.yaml", help="(optional) dataset.yaml path")
     parser.add_argument("--imgsz", "--img", "--img-size", nargs="+", type=int, default=[640], help="inference size h,w")
     parser.add_argument("--conf-thres", type=float, default=0.25, help="confidence threshold")

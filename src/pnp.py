@@ -10,7 +10,7 @@ from typing import Tuple # 对pnp.solve()返回值做类型标注，返回含6�
 class Pnp:
     @staticmethod
     def convertCornerToImagePoints(points):
-        return np.array([[points[i].x, points[i].y] for i in range(5)], dtype=np.float32)
+        return np.array([[points[i].x, points[i].y] for i in range(5)], dtype=np.float64)
 
     #必须传入二维码的一半长度
     def setObjectPoints(self, halfLength:float):
@@ -20,7 +20,7 @@ class Pnp:
             [halfLength, -halfLength, 0],
             [halfLength, halfLength, 0],
             [-halfLength, halfLength, 0]
-        ], dtype=np.float32)
+        ], dtype=np.float64)
 
     def __init__(self, halfLength, camera_matrix, dist_coeffs = np.zeros((4, 1))) -> None:
         self.camera_matrix = camera_matrix
